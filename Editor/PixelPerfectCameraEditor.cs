@@ -11,12 +11,14 @@ namespace UnityEditor.U2D
         {
             public GUIContent x = new GUIContent("X");
             public GUIContent y = new GUIContent("Y");
+            public GUIContent backgroundColor = new GUIContent("Background Color", "Background color if viewport does not match screen resolution.");
             public GUIContent assetsPPU = new GUIContent("Assets Pixels Per Unit", "The amount of pixels that make up one unit of the Scene. Set this value to match the PPU value of Sprites in the Scene.");
             public GUIContent refRes = new GUIContent("Reference Resolution", "The original resolution the Assets are designed for.");
             public GUIContent upscaleRT = new GUIContent("Upscale Render Texture", "If enabled, the Scene is rendered as close as possible to the Reference Resolution while maintaining the screen aspect ratio, then upscaled to fit the full screen.");
             public GUIContent pixelSnapping = new GUIContent("Pixel Snapping", "If enabled, Sprite Renderers are snapped to a grid in world space at render-time. Grid size is based on the Assets Pixels Per Unit value. This does not affect GameObjects' Transform positions.");
-            public GUIContent cropFrame = new GUIContent("Crop Frame", "Crops the viewport to match the Reference Resolution, along the checked axis. Black bars will be added to fit the screen aspect ratio.");
+            public GUIContent cropFrame = new GUIContent("Crop Frame", "Crops the viewport to match the Reference Resolution, along the checked axis. Background color bars will be added to fit the screen aspect ratio.");
             public GUIContent stretchFill = new GUIContent("Stretch Fill", "If enabled, expands the viewport to fit the screen resolution while maintaining the viewport aspect ratio.");
+            public GUIContent anchor = new GUIContent("Anchor", "If viewport is smaller than screen resolution, anchor viewport to screen.");
             public GUIContent currentPixelRatio = new GUIContent("Current Pixel Ratio", "Ratio of the rendered Sprites compared to their original size.");
             public GUIContent runInEditMode = new GUIContent("Run In Edit Mode", "Enable this to preview Camera setting changes in Edit Mode. This will cause constant changes to the Scene while active.");
 
@@ -36,6 +38,7 @@ namespace UnityEditor.U2D
         private const float k_SingleLetterLabelWidth = 15.0f;
         private const float k_DottedLineSpacing = 2.5f;
 
+        private SerializedProperty m_BackgroundColor;
         private SerializedProperty m_AssetsPPU;
         private SerializedProperty m_RefResX;
         private SerializedProperty m_RefResY;
@@ -44,6 +47,7 @@ namespace UnityEditor.U2D
         private SerializedProperty m_CropFrameY;
         private SerializedProperty m_CropFrameX;
         private SerializedProperty m_StretchFill;
+        private SerializedProperty m_Anchor;
 
         private Vector2 m_GameViewSize = Vector2.zero;
         private GUIContent m_CurrentPixelRatioValue;
@@ -59,6 +63,7 @@ namespace UnityEditor.U2D
 
         public void OnEnable()
         {
+            m_BackgroundColor = serializedObject.FindProperty("m_BackgroundColor");
             m_AssetsPPU = serializedObject.FindProperty("m_AssetsPPU");
             m_RefResX = serializedObject.FindProperty("m_RefResolutionX");
             m_RefResY = serializedObject.FindProperty("m_RefResolutionY");
@@ -67,6 +72,7 @@ namespace UnityEditor.U2D
             m_CropFrameY = serializedObject.FindProperty("m_CropFrameY");
             m_CropFrameX = serializedObject.FindProperty("m_CropFrameX");
             m_StretchFill = serializedObject.FindProperty("m_StretchFill");
+            m_Anchor = serializedObject.FindProperty("m_Anchor");
         }
 
         public override bool RequiresConstantRepaint()
@@ -96,6 +102,7 @@ namespace UnityEditor.U2D
             float originalLabelWidth = EditorGUIUtility.labelWidth;
 
             serializedObject.Update();
+            EditorGUILayout.PropertyField(m_BackgroundColor, m_Style.backgroundColor);
 
             EditorGUILayout.PropertyField(m_AssetsPPU, m_Style.assetsPPU);
             if (m_AssetsPPU.intValue <= 0)
@@ -137,6 +144,13 @@ namespace UnityEditor.U2D
                 EditorGUIUtility.labelWidth = originalLabelWidth;
             }
             EditorGUILayout.EndHorizontal();
+
+            if (m_CropFrameY.boolValue || m_CropFrameX.boolValue)
+            {
+                EditorGUI.indentLevel++;
+                EditorGUILayout.PropertyField(m_Anchor, m_Style.anchor);
+                EditorGUI.indentLevel--;
+            }
 
             if (m_CropFrameY.boolValue && m_CropFrameX.boolValue)
             {

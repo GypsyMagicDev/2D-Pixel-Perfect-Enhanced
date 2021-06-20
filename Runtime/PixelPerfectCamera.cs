@@ -9,6 +9,7 @@ namespace UnityEngine.U2D
     [HelpURL("https://docs.unity3d.com/Packages/com.unity.2d.pixel-perfect@latest/index.html?subfolder=/manual/index.html%23properties")]
     public class PixelPerfectCamera : MonoBehaviour, IPixelPerfectCamera
     {
+        public Color backgroundColor { get { return m_BackgroundColor; } set { m_BackgroundColor = value; } }
         /// <summary>
         /// Match this value to to the Pixels Per Unit values of all Sprites within the Scene.
         /// </summary>
@@ -37,12 +38,12 @@ namespace UnityEngine.U2D
         public bool pixelSnapping { get { return m_PixelSnapping; } set { m_PixelSnapping = value; } }
 
         /// <summary>
-        /// Set to true to crop the viewport with black bars to match refResolutionX in the horizontal direction.
+        /// Set to true to crop the viewport with background color bars to match refResolutionX in the horizontal direction.
         /// </summary>
         public bool cropFrameX { get { return m_CropFrameX; } set { m_CropFrameX = value; } }
 
         /// <summary>
-        /// Set to true to crop the viewport with black bars to match refResolutionY in the vertical direction.
+        /// Set to true to crop the viewport with background color bars to match refResolutionY in the vertical direction.
         /// </summary>
         public bool cropFrameY { get { return m_CropFrameY; } set { m_CropFrameY = value; } }
 
@@ -51,6 +52,8 @@ namespace UnityEngine.U2D
         /// Only applicable when both cropFrameX and cropFrameY are true.
         /// </summary>
         public bool stretchFill { get { return m_StretchFill; } set { m_StretchFill = value; } }
+
+        public ViewportAnchor anchor { get { return m_Anchor; } set { m_Anchor = value; } }
 
         /// <summary>
         /// Ratio of the rendered Sprites compared to their original size (readonly).
@@ -111,6 +114,9 @@ namespace UnityEngine.U2D
         }
 
         [SerializeField]
+        Color m_BackgroundColor = Color.black;
+
+        [SerializeField]
         int m_AssetsPPU = 100;
 
         [SerializeField]
@@ -133,6 +139,9 @@ namespace UnityEngine.U2D
 
         [SerializeField]
         bool m_StretchFill = false;
+
+        [SerializeField]
+        ViewportAnchor m_Anchor = ViewportAnchor.Center;
 
         Camera m_Camera;
         PixelPerfectCameraInternal m_Internal;
@@ -200,10 +209,10 @@ namespace UnityEngine.U2D
 
         void OnPreRender()
         {
-            // Clear the screen to black so that we can see black bars.
+            // Clear the screen to background color so that we can see colored bars.
             // Need to do it before anything is drawn if we're rendering directly to the screen.
             if (m_Internal.cropFrameXOrY && !m_Camera.forceIntoRenderTexture && !m_Camera.allowMSAA)
-                GL.Clear(false, true, Color.black);
+                GL.Clear(false, true, m_BackgroundColor);
 
             PixelPerfectRendering.pixelSnapSpacing = m_Internal.unitsPerPixel;
         }
@@ -212,13 +221,13 @@ namespace UnityEngine.U2D
         {
             PixelPerfectRendering.pixelSnapSpacing = 0.0f;
 
-            // Clear the screen to black so that we can see black bars.
+            // Clear the screen to background color so that we can see colored bars.
             // If a temporary offscreen RT is used, we do the clear after we're done with that RT to avoid an unnecessary RT switch. 
             if (m_Camera.activeTexture != null)
             {
                 Graphics.SetRenderTarget(null as RenderTexture);
                 GL.Viewport(new Rect(0.0f, 0.0f, Screen.width, Screen.height));
-                GL.Clear(false, true, Color.black);
+                GL.Clear(false, true, m_BackgroundColor);
             }
 
             if (!m_Internal.useOffscreenRT)

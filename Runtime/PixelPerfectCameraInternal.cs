@@ -2,6 +2,19 @@ using System;
 
 namespace UnityEngine.U2D
 {
+    public enum ViewportAnchor
+    {
+        TopLeft,
+        Top,
+        TopRight,
+        CenterLeft,
+        Center,
+        CenterRight,
+        BottomLeft,
+        Bottom,
+        BottomRight
+    }
+
     internal interface IPixelPerfectCamera
     {
         int assetsPPU { get; set; }
@@ -12,6 +25,7 @@ namespace UnityEngine.U2D
         bool cropFrameX { get; set; }
         bool cropFrameY { get; set; }
         bool stretchFill { get; set; }
+        ViewportAnchor anchor { get; set; }
     }
 
     [Serializable]
@@ -141,8 +155,8 @@ namespace UnityEngine.U2D
                     pixelRect.height = screenHeight;
                 }
 
-                pixelRect.x = (screenWidth - (int)pixelRect.width) / 2;
-                pixelRect.y = (screenHeight - (int)pixelRect.height) / 2;
+                pixelRect.x = CalculateRectX((int)pixelRect.width, screenWidth);
+                pixelRect.y = CalculateRectY((int)pixelRect.height, screenHeight);
             }
             else if (useOffscreenRT)
             {
@@ -187,15 +201,11 @@ namespace UnityEngine.U2D
                 {
                     pixelRect.height = screenHeight;
                     pixelRect.width = screenHeight * cameraAspect;
-                    pixelRect.x = (screenWidth - (int)pixelRect.width) / 2;
-                    pixelRect.y = 0;
                 }
                 else
                 {
                     pixelRect.width = screenWidth;
                     pixelRect.height = screenWidth / cameraAspect;
-                    pixelRect.y = (screenHeight - (int)pixelRect.height) / 2;
-                    pixelRect.x = 0;
                 }
             }
             else
@@ -203,11 +213,99 @@ namespace UnityEngine.U2D
                 // center
                 pixelRect.height = zoom * offscreenRTHeight;
                 pixelRect.width = zoom * offscreenRTWidth;
-                pixelRect.x = (screenWidth - (int)pixelRect.width) / 2;
-                pixelRect.y = (screenHeight - (int)pixelRect.height) / 2;
             }
+            pixelRect.x = CalculateRectX((int)pixelRect.width, screenWidth);
+            pixelRect.y = CalculateRectY((int)pixelRect.height, screenHeight);
 
             return pixelRect;
+        }
+
+        internal float CalculateRectX(int width, int screenWidth)
+        {
+            float x = 0f;
+            switch (m_Component.anchor)
+            {
+                case ViewportAnchor.TopLeft:
+                case ViewportAnchor.CenterLeft:
+                case ViewportAnchor.BottomLeft:
+                    {
+                        x = 0;
+                        break;
+                    }
+                case ViewportAnchor.TopRight:
+                case ViewportAnchor.CenterRight:
+                case ViewportAnchor.BottomRight:
+                    {
+                        if (screenWidth > width)
+                        {
+                            x = screenWidth - width;
+                        }
+                        else
+                        {
+                            x = 0;
+                        }
+                        break;
+                    }
+                case ViewportAnchor.Top:
+                case ViewportAnchor.Center:
+                case ViewportAnchor.Bottom:
+                    {
+                        if (screenWidth > width)
+                        {
+                            x = (screenWidth - width) / 2;
+                        }
+                        else
+                        {
+                            x = 0;
+                        }
+                        break;
+                    }
+            }
+            return x;
+        }
+
+        internal float CalculateRectY(int height, int screenHeight)
+        {
+            float y = 0f;
+            switch (m_Component.anchor)
+            {
+                case ViewportAnchor.TopLeft:
+                case ViewportAnchor.Top:
+                case ViewportAnchor.TopRight:
+                    {
+                        if (height < screenHeight)
+                        {
+                            y = screenHeight - height;
+                        }
+                        else
+                        {
+                            y = 0;
+                        }
+                        break;
+                    }
+                case ViewportAnchor.CenterLeft:
+                case ViewportAnchor.Center:
+                case ViewportAnchor.CenterRight:
+                    {
+                        if (height < screenHeight)
+                        {
+                            y = (screenHeight - height) / 2;
+                        }
+                        else
+                        {
+                            y = 0;
+                        }
+                        break;
+                    }
+                case ViewportAnchor.BottomLeft:
+                case ViewportAnchor.Bottom:
+                case ViewportAnchor.BottomRight:
+                    {
+                        y = 0;
+                        break;
+                    }
+            }
+            return y;
         }
 
         // Find a pixel-perfect orthographic size as close to targetOrthoSize as possible.
